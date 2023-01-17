@@ -1,6 +1,8 @@
 #!/bin/bash
-folder=/tmp/$(date +%s)
-mkdir -p "$folder"
+# set -xeu
+
+tmp_folder=/tmp/capture
+mkdir -p "$tmp_folder"
 interface=""
 if [ "$DST" == "NODE" ]; then
     # autodetect from default route, or
@@ -23,23 +25,37 @@ else
     done
 fi
 
-if [ "$interface" == "" ]; then
+if [ "${interface:-}" == "" ]; then
     echo "no interface is found through $DST"
     exit 1
 fi
 tcpdump_args=" -i $interface"
 
-if [ $DURATION != "" ]; then
+if [ "${DURATION:-}" != "" ]; then
     tcpdump_args="$tcpdump_args -G $DURATION -W 1"
-elif [ "$MAXCAPTURESIZE" != "" ]; then
-    tcpdump_args="$tcpdump_args -C $MAXCAPTURESIZE"
+fi
+# tcpdump cannot be stopped when a determined size reaches.
+# elif [ "$MAXCAPTURESIZE" != "" ]; then
+#    tcpdump_args="$tcpdump_args -C $MAXCAPTURESIZE"
+#fi
+
+file_name="$tmp_folder/$CAPTURE_NAME-$(hostname)-$(date +%Y%m%d%H%M%S%Z)"
+tcpdump_file_name="${file_name}.pcap"
+tcpdump_args="$tcpdump_args -w $tcpdump_file_name"
+
+echo "tcpdump arguments: $tcpdump_args"
+
+sh -c "tcpdump $tcpdump_args"
+INCLUDE_METADATA=$(echo "${INCLUDE_METADATA:-}" | tr '[:upper:]' '[:lower:]')
+if [ "${INCLUDE_METADATA}" == "true" ]; then
+    metadata_file_name="${file_name}.metadata.txt"
+    echo "collect metadata"
+    (
+        ip route;
+        ip nei;
+        # more to add
+        # better formatting
+    )> "$metadata_file_name"
 fi
 
-tcpdump $tcpdump_args -w $folder/capture.pcap
-
-if [ $INCLUDE_METADATA == "" ]; then
-    # collect metadata
-    echo "xx"
-fi
-
-# zip the files collected
+mv $tmp_folder/* "$HOSTPATH"

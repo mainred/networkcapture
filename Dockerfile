@@ -1,7 +1,9 @@
-FROM registry.k8s.io/build-image/debian-base:bullseye-v1.4.2
+FROM ubuntu:20.04
 
-RUN apt update && apt upgrade -y && apt install tcpdump -y && apt install util-linux -y
+RUN apt-get update -qq -y && apt-get upgrade -y && \
+    apt-get install net-tools libcap2 tcpdump -y && \
+    apt-get install util-linux iproute2 -y
 
 COPY ./capture.sh /capture.sh
-
+RUN chmod +x /capture.sh
 ENTRYPOINT ["/capture.sh"]
