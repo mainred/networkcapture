@@ -58,4 +58,5 @@ if [ "${INCLUDE_METADATA}" == "true" ]; then
     )> "$metadata_file_name"
 fi
 
+echo "moving files to destination path"
 mv $tmp_folder/* "$HOSTPATH"
